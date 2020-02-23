@@ -1,6 +1,6 @@
 {
   "name": "babel-plugin-async-function-try-catch",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "add try catch code blocks to async functions",
   "license": "MIT",
   "repository": {
@@ -16,6 +16,7 @@
     "email": "zhijiang34@gmail.com"
   },
   "scripts": {
+    "publish": "npm run build && npm publish",
     "lint": "prettier ./src/**/*.js --write",
     "test": "jest",
     "build": "babel src --out-dir lib"

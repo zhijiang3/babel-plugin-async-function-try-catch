@@ -7,7 +7,11 @@ function getCatchClauseBlockStatement({ injectImport } = {}) {
   const { specifier } = injectImport;
 
   blockStatement.push(
-    types.expressionStatement(types.callExpression(types.identifier(specifier), [types.identifier("error")]))
+    types.expressionStatement(
+      types.callExpression(types.identifier(specifier), [
+        types.identifier("error")
+      ])
+    )
   );
 
   return blockStatement;
@@ -34,8 +38,36 @@ const importVisitor = {
     if (isEqualSource) {
       // 标记已经引入了需要引入的模块
       context.hasImportedSource = true;
-      path.node.specifiers.push(types.importSpecifier(types.identifier(specifier), types.identifier(specifier)));
+      path.node.specifiers.push(
+        types.importSpecifier(
+          types.identifier(specifier),
+          types.identifier(specifier)
+        )
+      );
     }
+  }
+};
+
+const asyncFunctionVisitor = {
+  Function(path, context) {
+    // prettier-ignore
+    if (!path.node.async
+      || path.node.generator
+      || !types.isBlockStatement(path.node.body)
+      || types.isTryStatement(path.node.body.body[0])) return;
+
+    context.hasAsyncFunction = true;
+
+    // 检查异步方法是否有 try catch 代码块
+    path.node.body.body = [
+      types.tryStatement(
+        types.blockStatement(path.node.body.body),
+        types.catchClause(
+          types.identifier("error"),
+          types.blockStatement(getCatchClauseBlockStatement(context))
+        )
+      )
+    ];
   }
 };
 
@@ -48,7 +80,7 @@ const importVisitor = {
  *   }
  * }
  */
-export default function () {
+export default function() {
   return {
     name: "async-function-try-catch",
 
@@ -56,38 +88,33 @@ export default function () {
       Program(path, state) {
         const { injectImport } = state.opts || {};
 
-        if (!injectImport) return;
+        const context = { injectImport };
+        path.traverse(asyncFunctionVisitor, context);
+
+        // 如果作用域中已经有需要使用的方法，则不再注入
+        if (!injectImport || path.scope.hasBinding(injectImport.specifier) || !context.hasAsyncFunction) return;
 
         const { specifier, source } = injectImport;
 
-        // 如果作用域中已经有需要使用的方法，则不再注入
-        if (path.scope.hasBinding(specifier)) return;
-
-        const importContext = { injectImport };
-        path.traverse(importVisitor, importContext);
+        path.traverse(importVisitor, context);
 
         // 已经引入了方法
-        if (importContext.hasImportedSource) return;
+        if (context.hasImportedSource) return;
 
         // 手动注入依赖
         path.unshiftContainer(
           "body",
           types.importDeclaration(
-            [types.importSpecifier(types.identifier(specifier), types.identifier(specifier))],
+            [
+              types.importSpecifier(
+                types.identifier(specifier),
+                types.identifier(specifier)
+              )
+            ],
             types.stringLiteral(source)
           )
         );
-      },
-      Function(path, state) {
-        if (!path.node.async || path.node.generator) return;
-        if (!types.isBlockStatement(path.node.body) || types.isTryStatement(path.node.body.body[0])) return;
-
-        // 检查异步方法是否有 try catch 代码块
-        path.node.body.body = [
-          types.tryStatement(types.blockStatement(path.node.body.body)),
-          types.catchClause(types.identifier("error"), types.blockStatement(getCatchClauseBlockStatement(state.opts)))
-        ];
       }
     }
   };
-};
+}

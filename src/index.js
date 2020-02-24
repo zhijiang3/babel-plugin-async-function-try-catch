@@ -1,10 +1,13 @@
 import { types } from "@babel/core";
 
-function getCatchClauseBlockStatement({ injectImport } = {}) {
-  if (!injectImport) return [];
-
+function getCatchClauseBlockStatement(path, { injectImport } = {}) {
   const blockStatement = [];
+
+  if (!injectImport) return blockStatement;
+
   const { specifier } = injectImport;
+
+  if (types.isIdentifier(path.node.id) && path.node.id.name === specifier) return blockStatement;
 
   blockStatement.push(
     types.expressionStatement(
@@ -64,7 +67,7 @@ const asyncFunctionVisitor = {
         types.blockStatement(path.node.body.body),
         types.catchClause(
           types.identifier("error"),
-          types.blockStatement(getCatchClauseBlockStatement(context))
+          types.blockStatement(getCatchClauseBlockStatement(path, context))
         )
       )
     ];

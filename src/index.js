@@ -27,7 +27,7 @@ function isFunc(obj) {
 
 const importVisitor = {
   ImportDeclaration(path, context) {
-    if (!types.isStringLiteral(path.node.source)) return;
+    if (!types.isStringLiteral(path.node.source) || context.hasImportedSource) return;
 
     const { specifier, source, checkSourceEqual } = context.injectImport;
 

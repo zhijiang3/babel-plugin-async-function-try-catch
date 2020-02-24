@@ -1,6 +1,9 @@
 # babel-plugin-async-function-try-catch
 
-> add try catch code blocks to async functions
+Add try catch code blocks to async functions
+
+![npm](https://img.shields.io/npm/v/babel-plugin-async-function-try-catch?style=flat-square)
+![license badge](https://img.shields.io/github/license/zhijiang3/babel-plugin-async-function-try-catch?style=flat-square)
 
 ## Example
 
@@ -24,9 +27,11 @@ async function foo() {
 
 **Out with options**
 
-> handle uncaught errors with handleError
+Handle uncaught errors with handleError
 
 ```js
+import { handleError } from "/src/utils/handleError";
+
 async function foo() {
   try {
     await bar();
@@ -36,7 +41,7 @@ async function foo() {
 }
 ```
 
-### Installation
+## Install
 
 npm: 
 
@@ -44,15 +49,15 @@ npm:
 npm install --save-dev babel-plugin-async-function-try-catch
 ```
 
-or yarn: 
+yarn: 
 
 ```sh
 yarn add -D babel-plugin-async-function-try-catch
 ```
 
-### Usage
+## Usage
 
-#### With a configuration file
+**With a configuration file**
 
 Without options:
 
@@ -79,16 +84,37 @@ With options:
 }
 ```
 
-### Via CLI
+**With a CLI**
 
 ```sh
 babel --plugins babel-plugin-async-function-try-catch script.js
 ```
 
-### Via Node API
+**With a Node API**
 
 ```js
 require("@babel/core").transform("code", {
   plugins: ["babel-plugin-async-function-try-catch"]
 });
 ```
+
+### Options
+
+```ts
+interface Options {
+  // inject handler function
+  injectImport: {
+    // identifier of the handler function
+    specifier: string;
+    // source path of the handler function
+    source: string;
+    // compare sourcePath and tragetPath, if true,
+    // the handler function will be inject by sourcePath
+    checkSourceEqual(sourcePath, targetPath): boolean;
+  }
+}
+```
+
+## License
+
+[MIT](LICENSE)
